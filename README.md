@@ -20,6 +20,8 @@ Roles:
 * [keys](roles/keys/README.md) for defining auth keys
 * [pools](roles/pools/README.md) for defining pools
 * [service_spec](roles/service_spec/README.md) for arbitrary service definition
+* [placement_policies](roles/placement_policies/README.md) for managing RGW
+  placement policies
 
 ## Using this collection
 

@@ -1,0 +1,19 @@
+cephadm_bootstrap_host: "{{ groups['mons'][0] }}"
+cephadm_rgw_placement_policy_zone: "default"
+cephadm_rgw_placement_policies:
+  - key: "default-placement"
+    index_pool: "default.rgw.buckets.index"
+    data_extra_pool: "default.rgw.buckets.non-ec"
+    storage_classes:
+      - name: "STANDARD"
+        data_pool: "default.rgw.buckets.data"
+      - name: "STANDARD_IA"
+        data_pool: "default.rgw.glacier.data"
+        compression_type: "lz4"
+  - key: "temporary"
+    index_pool: "default.rgw.temporary.index"
+    data_extra_pool: "default.rgw.temporary.non-ec"
+    inline_data: true
+    storage_classes:
+      - name: "STANDARD"
+        data_pool: "default.rgw.temporary.data"
