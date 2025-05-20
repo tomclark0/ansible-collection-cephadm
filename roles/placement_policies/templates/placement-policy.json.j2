@@ -1,0 +1,24 @@
+{
+  "name": "{{ cephadm_rgw_placement_policy_zone }}",
+  "placement_pools": [
+    {%- for pool in cephadm_rgw_placement_policies %}
+    {
+      "key": "{{ pool.key }}",
+      "val": {
+        "index_pool": "{{ pool.index_pool }}",
+        "storage_classes": {
+          {%- for class in pool.storage_classes %}
+          "{{ class.name }}": {
+            "data_pool": "{{ class.data_pool }}"{% if class.compression_type is defined %},
+            "compression_type": "{{ class.compression_type }}"{% endif %}
+          }{% if not loop.last %},{% endif %}
+          {%- endfor %}
+        },
+        "data_extra_pool": "{{ pool.data_extra_pool }}",
+        "index_type": 0,
+        "inline_data": {{ pool.inline_data | default(true) | tojson }}
+      }
+    }{% if not loop.last %},{% endif %}
+    {%- endfor %}
+  ]
+}

@@ -1,0 +1,3 @@
+cephadm_bootstrap_host: "{{ groups['mons'][0] }}"
+cephadm_rgw_placement_policy_zone: "default"
+cephadm_rgw_placement_policies: []
