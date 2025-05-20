@@ -1,0 +1,79 @@
+---
+- name: Get cluster fsid
+  ansible.builtin.command: cephadm shell -- ceph fsid
+  when: cephadm_fsid | length == 0
+  become: true
+  register: cephadm_fsid_current
+  changed_when: false
+
+- name: Set fsid fact
+  ansible.builtin.set_fact:
+    fsid: "{{ cephadm_fsid if cephadm_fsid | length > 0 else cephadm_fsid_current.stdout }}"
+
+- name: Assert each config_key is defined
+  ansible.builtin.assert:
+    that: item.config_key is defined
+    fail_msg: "Each cephadm_config_template entry must define config_key"
+  loop: "{{ cephadm_config_template }}"
+
+- name: Assert either contents or local_path is provided
+  ansible.builtin.assert:
+    that:
+      - item.contents is defined or item.local_path is defined
+    fail_msg: "Each cephadm_config_template must define either 'contents' or 'local_path'"
+  loop: "{{ cephadm_config_template }}"
+
+- name: Copy config from contents
+  ansible.builtin.copy:
+    dest: "/var/run/ceph/{{ fsid }}/{{ item.config_key.split('/')[-1] }}"
+    content: "{{ item.contents }}"
+    mode: '0645'
+  when:
+    - item.contents is defined
+    - inventory_hostname == cephadm_bootstrap_host
+  loop: "{{ cephadm_config_template }}"
+  register: content_copy_result
+  loop_control:
+    label: "{{ item.config_key }}"
+
+- name: Copy config from template
+  ansible.builtin.template:
+    src: "{{ item.local_path }}"
+    dest: "/var/run/ceph/{{ fsid }}/{{ item.config_key.split('/')[-1] }}"
+    mode: '0645'
+  when:
+    - item.local_path is defined
+    - inventory_hostname == cephadm_bootstrap_host
+  loop: "{{ cephadm_config_template }}"
+  register: template_copy_result
+  loop_control:
+    label: "{{ item.config_key }}"
+
+- name: Mark item as changed if copy or template changed
+  ansible.builtin.set_fact:
+    cephadm_changed_items: "{{ cephadm_changed_items | default([]) + [item] }}"
+  when: >
+    (content_copy_result.results is defined and content_copy_result.results[index].changed) or
+    (template_copy_result.results is defined and template_copy_result.results[index].changed)
+  loop: "{{ cephadm_config_template }}"
+  loop_control:
+    index_var: index
+    label: "{{ item.config_key }}"
+
+- name: Apply updated config
+  ansible.builtin.command: >
+    cephadm shell -- bash -c
+    "ceph config-key set mgr/cephadm/{{ item.config_key }} -i /var/run/ceph/{{ item.config_key.split('/')[-1] }}"
+  when: item.config_key is defined
+  loop: "{{ cephadm_changed_items }}"
+  changed_when: false
+
+- name: Restart services if reconfig true
+  ansible.builtin.command: >
+    cephadm shell -- bash -c
+    "ceph orch restart {{ item.1 }}"
+  loop: "{{ query('subelements', cephadm_changed_items| default([]), 'services') }}"
+  when:
+    - inventory_hostname == cephadm_bootstrap_host
+    - item.0.reconfig | default(false)
+    - item.1 is defined
