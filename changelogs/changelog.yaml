@@ -33,3 +33,14 @@ releases:
     fragments:
     - sudo-fix.yml
     release_date: '2025-01-08'
+  1.21.1:
+    changes:
+      bugfixes:
+      - prechecks - change groups existence check to run once
+      - prechecks - fix groups existing assertion
+    release_date: '2025-11-12'
+  1.22.0:
+    changes:
+      minor_changes:
+      - Add Tentacle support
+    release_date: '2025-11-12'

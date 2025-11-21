@@ -6,7 +6,8 @@
     logs_dir: "/tmp/logs"
   roles:
     - ensure-output-dirs
-    - ensure-pip
+    - role: "ensure-pip"
+      when: ansible_facts.distribution == "Ubuntu"
     - role: "ensure-docker"
       when: cephadm_container_engine == "docker"
     - role: "ensure-podman"

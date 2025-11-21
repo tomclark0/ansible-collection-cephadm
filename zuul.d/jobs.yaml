@@ -84,6 +84,20 @@
       cephadm_ceph_release: squid
       cephadm_container_engine: podman
 
+- job:
+    name: cephadm-noble-multinode-docker-tentacle
+    parent: .cephadm-noble-multinode-template
+    vars:
+      cephadm_ceph_release: tentacle
+      cephadm_container_engine: docker
+
+- job:
+    name: cephadm-noble-multinode-podman-tentacle
+    parent: .cephadm-noble-multinode-template
+    vars:
+      cephadm_ceph_release: tentacle
+      cephadm_container_engine: podman
+
 # Rocky 9
 
 - job:
@@ -112,4 +126,18 @@
     parent: .cephadm-rocky9-multinode-template
     vars:
       cephadm_ceph_release: squid
+      cephadm_container_engine: podman
+
+- job:
+    name: cephadm-rocky9-multinode-docker-tentacle
+    parent: .cephadm-rocky9-multinode-template
+    vars:
+      cephadm_ceph_release: tentacle
+      cephadm_container_engine: docker
+
+- job:
+    name: cephadm-rocky9-multinode-podman-tentacle
+    parent: .cephadm-rocky9-multinode-template
+    vars:
+      cephadm_ceph_release: tentacle
       cephadm_container_engine: podman

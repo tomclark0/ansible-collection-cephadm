@@ -4,6 +4,23 @@ stackhpc.cephadm Release Notes
 
 .. contents:: Topics
 
+v1.22.0
+=======
+
+Minor Changes
+-------------
+
+- Add Tentacle support
+
+v1.21.1
+=======
+
+Bugfixes
+--------
+
+- prechecks - change groups existence check to run once
+- prechecks - fix groups existing assertion
+
 v1.19.1
 =======
 

@@ -2,6 +2,8 @@
 
 This role bootstraps and configures Ceph using cephadm.
 
+[![asciicast](https://asciinema.org/a/752639.svg)](https://asciinema.org/a/752639)
+
 ## Prerequisites
 
 ### Host prerequisites
