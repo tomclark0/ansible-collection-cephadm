@@ -29,7 +29,13 @@ All Ceph hosts must be in the `ceph` group.
             - name: pool2
               size: 2
               application: rbd
-              state: absent 
+              state: absent
+            - name: pool3
+              application: rbd
+              pg_autoscale_mode: on
+              compression_algorithm: zstd
+              compression_mode: aggressive
+              state: present
    ```
 
 Check the `cephadm_pool` module docs for supported pool options.

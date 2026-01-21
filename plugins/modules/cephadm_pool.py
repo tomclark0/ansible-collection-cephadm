@@ -24,8 +24,9 @@ module: cephadm_pool
 author:
     - Guillaume Abrioux <gabrioux@redhat.com>
     - Michal Nasiadka <michal@stackhpc.com>
+    - Tom Clark <tom.clark@nscale.com>
 short_description: Manage Ceph Pools
-version_added: "1.4.0"
+version_added: "1.5.0"
 description:
     - Manage Ceph pool(s) creation, deletion and updates.
 options:
@@ -120,6 +121,20 @@ options:
         required: false
         default: false
         type: bool
+    compression_algorithm:
+        description:
+            - Set the compression_algorithm parameter of the pool.
+        required: false
+        default: None
+        choices: ['lz4', 'snappy', 'zlib', 'zstd']
+        type: str
+    compression_mode:
+        description:
+            - Set the compression_mode parameter of the pool.
+        required: false
+        choices: ['none', 'passive', 'aggressive', 'force']
+        default: None
+        type: str
 '''
 
 EXAMPLES = r'''
@@ -268,23 +283,36 @@ def get_pool_details(module,
                                                      get_application_pool(name)
                                                      )
 
-    # This is a trick because "target_size_ratio" isn't present at the same
-    # level in the dict
+    # This is a trick because "target_size_ratio", "compression_algorithm", and
+    # "compression_mode" are not present at the same level in the dict
     # ie:
     # {
     # 'pg_num': 8,
     # 'pgp_num': 8,
     # 'pg_autoscale_mode': 'on',
     #     'options': {
-    #          'target_size_ratio': 0.1
+    #          'target_size_ratio': 0.1.,
+    #          'compression_algorithm": "zstd",
+    #          'compression_mode": "agressive"
     #     }
     # }
-    # If 'target_size_ratio' is present in 'options', we set it, this way we
+    # If these are present in 'options', we set them, this way we
     # end up with a dict containing all needed keys at the same level.
+    #
     if 'target_size_ratio' in out['options'].keys():
         out['target_size_ratio'] = out['options']['target_size_ratio']
     else:
         out['target_size_ratio'] = None
+
+    if 'compression_algorithm' in out['options'].keys():
+        out['compression_algorithm'] = out['options']['compression_algorithm']
+    else:
+        out['compression_algorithm'] = None
+
+    if 'compression_mode' in out['options'].keys():
+        out['compression_mode'] = out['options']['compression_mode']
+    else:
+        out['compression_mode'] = None
 
     application = list(json.loads(application_pool.strip()).keys())
 
@@ -303,7 +331,8 @@ def compare_pool_config(user_pool_config, running_pool_details):
 
     delta = {}
     filter_keys = ['pg_num', 'pg_placement_num', 'size',
-                   'pg_autoscale_mode', 'target_size_ratio']
+                   'pg_autoscale_mode', 'target_size_ratio',
+                   'compression_algorithm', 'compression_mode']
     for key in filter_keys:
         if (str(running_pool_details[key]) != user_pool_config[key]['value'] and  # noqa: E501
                 user_pool_config[key]['value']):
@@ -453,7 +482,9 @@ def run_module():
         rule_name=dict(type='str', required=False, default=None),
         expected_num_objects=dict(type='str', required=False, default="0"),
         application=dict(type='str', required=False, default=None),
-        allow_ec_overwrites=dict(type='bool', required=False, default=False)
+        allow_ec_overwrites=dict(type='bool', required=False, default=False),
+        compression_algorithm=dict(type='str', required=False, default=None),
+        compression_mode=dict(type='str', required=False, default=None)
     )
 
     module = AnsibleModule(
@@ -473,6 +504,8 @@ def run_module():
     target_size_ratio = module.params.get('target_size_ratio')
     application = module.params.get('application')
     allow_ec_overwrites = module.params.get('allow_ec_overwrites')
+    compression_algorithm = module.params.get('compression_algorithm')
+    compression_mode = module.params.get('compression_mode')
 
     if (module.params.get('pg_autoscale_mode').lower() in
             ['true', 'on', 'yes']):
@@ -512,7 +545,9 @@ def run_module():
         'expected_num_objects': {'value': expected_num_objects},
         'size': {'value': size, 'cli_set_opt': 'size'},
         'min_size': {'value': min_size},
-        'allow_ec_overwrites': {'value': allow_ec_overwrites}
+        'allow_ec_overwrites': {'value': allow_ec_overwrites},
+        'compression_algorithm': {'value': compression_algorithm, 'cli_set_opt': 'compression_algorithm'},
+        'compression_mode': {'value': compression_mode, 'cli_set_opt': 'compression_mode'}
     }
 
     if module.check_mode:
